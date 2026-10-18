@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  address        String   @default("")
+  pinHash        String
+  avgTurnMinutes Int      @default(45)
+  createdAt      DateTime @default(now())
+  tables         Table[]
+  parties        Party[]
+}
+
+model Table {
+  id            String     @id @default(cuid())
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  label         String
+  seats         Int
+  /// "FREE" | "OCCUPIED"
+  status        String     @default("FREE")
+  occupiedSince DateTime?
+
+  @@index([restaurantId])
+}
+
+model Party {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name         String
+  size         Int
+  phone        String?
+  /// "WAITING" | "NOTIFIED" | "SEATED" | "LEFT"
+  status       String     @default("WAITING")
+  /// Random private handle the guest uses to follow their place in line.
+  token        String     @unique
+  tableId      String?
+  joinedAt     DateTime   @default(now())
+  notifiedAt   DateTime?
+  seatedAt     DateTime?
+
+  @@index([restaurantId, status])
+}
